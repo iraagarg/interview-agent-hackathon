@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-data.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/sync-data.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync-data": "node scripts/sync-data.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

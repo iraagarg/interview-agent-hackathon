@@ -3,7 +3,10 @@ import { postInterview, newSessionId } from './api.js';
 import CandidatePicker from './components/CandidatePicker.jsx';
 import MessageList from './components/MessageList.jsx';
 import Composer from './components/Composer.jsx';
-import candidatesData from '../../data/candidates.json';
+// Kept in sync with /data/candidates.json by scripts/sync-data.mjs, which runs
+// before dev and build. Importing a local copy keeps the client buildable
+// without depending on files above its root directory.
+import candidatesData from './data/candidates.json';
 
 const candidates = candidatesData.candidates;
 
