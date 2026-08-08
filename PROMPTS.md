@@ -50,5 +50,3 @@ Start with step 1 only — propose the strategy and wait for my confirmation bef
 
 ---
 
-
-
