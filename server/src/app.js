@@ -37,6 +37,32 @@ export function createApp() {
     return next(err);
   });
 
+  // The contract only requires POST /api/interview, but the base URL is what a
+  // human pastes into a browser first. Answering with a 404 there makes a
+  // working deployment look broken, so describe the API instead.
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      service: 'AI Interview Agent',
+      status: 'ok',
+      description:
+        'Conducts a multi-turn technical interview based on a candidate\'s progress through a 31-day AI cohort.',
+      endpoints: {
+        interview: 'POST /api/interview',
+        health: 'GET /health',
+      },
+      usage: {
+        start: { sessionId: 'abc-123', candidate: '{ ...candidate object }' },
+        turn: { sessionId: 'abc-123', message: 'the candidate answer' },
+        final: {
+          reply: '...',
+          done: true,
+          feedback: { summary: 'string', strengths: [], gaps: [], next: [] },
+        },
+      },
+      repository: 'https://github.com/iraagarg/interview-agent-hackathon',
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.status(200).json({ ok: true, sessions: store.size(), uptime: process.uptime() });
   });

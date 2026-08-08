@@ -191,6 +191,14 @@ section('4. Unknown session and routing (404)');
   const health = await fetch(`${BASE}/health`);
   const hj = await health.json();
   check('/health returns ok:true', health.status === 200 && hj.ok === true);
+
+  // A browser hitting the base URL must not see a 404 — a live deployment
+  // should not look broken to the first person who pastes the link.
+  const root = await fetch(`${BASE}/`);
+  const rj = await root.json();
+  check('GET / returns 200 with service info',
+    root.status === 200 && rj.status === 'ok' && rj.endpoints?.interview === 'POST /api/interview',
+    `got ${root.status}`);
 }
 
 // --- 5. session semantics ----------------------------------------------------
