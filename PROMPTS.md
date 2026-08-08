@@ -50,3 +50,29 @@ Start with step 1 only — propose the strategy and wait for my confirmation bef
 
 ---
 
+## [Aug 8, 7:00 PM IST] strategy confirmation and ambiguity resolutions
+Data files are now in place at data/curriculum.json, data/candidates.json, data/technical-spec.md — read them directly to confirm field names before scaffolding.
+
+Answers to your flagged ambiguities:
+
+1. Data files — fixed, see above. Confirm the actual schema matches what you assumed before proceeding; flag me immediately if it doesn't.
+
+2. Start response combining greeting + Q1: Yes, combine them. Count it as question 1.
+
+3. candidate object trust: Use the posted candidate object as-is, exactly as the contract implies. No fallback lookup needed — keep it simple, the contract is explicit that the client posts it.
+
+4. Turn posted after done: true: Idempotently replay the final feedback payload. Do not error.
+
+5. Error response shape: 400 + { "error": "...", "code": "..." } for malformed requests, 404 + same shape for unknown sessionId. Everything else returns 200.
+
+6. Greeting counting toward "8 questions": Confirmed — only actual interrogative turns count, guarantee minimum 8 of those.
+
+7. Fairness of probing unreached days: Your proposed approach is correct — weight near-zero, never let them displace a real signal from attempted/skipped days. Keep as designed.
+
+8. Breeth: Defer it as you proposed. Build the in-memory Map first. Only add Breeth as an optional persistence adapter if time remains after the core interview flow, feedback generation, and frontend are all working and deployed. Do not let it block the critical path.
+
+Your topic-scoring strategy, question budget/pacing, single structured-JSON-call-per-turn approach, and deterministic feedback fallback are all approved as designed — this is exactly the kind of grounded, guaranteed-compliant design I want. Proceed to step 2: scaffold /server, /client, .env.example (GROQ_API_KEY, PORT — no Breeth key for now), and README skeleton. Stop and report back before writing any interview logic, as you proposed.
+
+---
+
+
