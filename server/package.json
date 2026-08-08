@@ -1,0 +1,21 @@
+{
+  "name": "interview-agent-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Interview Agent — Express backend exposing POST /api/interview",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "groq-sdk": "^0.37.0"
+  }
+}
