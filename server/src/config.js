@@ -15,6 +15,11 @@ export const config = {
 
   // Session lifetime before the sweeper reclaims it.
   sessionTtlMs: 2 * 60 * 60 * 1000,
+
+  // MOCK_LLM=1 runs the whole interview against canned structured responses.
+  // Lets the plan/turn/termination logic be tested deterministically with no
+  // API key and no network — and gives a working offline demo fallback.
+  mockLlm: process.env.MOCK_LLM === '1',
 };
 
 /**

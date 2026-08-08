@@ -2,16 +2,16 @@ import { createApp } from './app.js';
 import { config, assertConfig } from './config.js';
 import * as store from './lib/sessions.js';
 
-// Skipped during scaffolding so the server runs without a key; step 4 turns
-// this on, since by then every turn genuinely needs Groq.
-// assertConfig();
+// Fail at boot rather than degrading silently to scripted fallback questions
+// mid-demo. MOCK_LLM=1 is the explicit opt-out for offline runs.
+if (!config.mockLlm) assertConfig();
 
 const app = createApp();
 
 const server = app.listen(config.port, () => {
   console.log(`[server] listening on :${config.port}`);
   console.log(`[server] POST http://localhost:${config.port}/api/interview`);
-  if (!config.groqApiKey) console.warn('[server] GROQ_API_KEY not set — engine stub only');
+  if (config.mockLlm) console.warn('[server] MOCK_LLM=1 — canned responses, no Groq calls');
 });
 
 store.startSweeper();

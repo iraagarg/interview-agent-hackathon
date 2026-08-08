@@ -75,4 +75,21 @@ Your topic-scoring strategy, question budget/pacing, single structured-JSON-call
 
 ---
 
+## [Aug 8, 7:30 PM IST] Add deterministic interview planner, turn engine, and E2E verification
+proceed
+
+---
+
+## [Aug 8, 7:50 PM IST] Add deterministic interview planner, turn engine, and E2E verification
+that was a mistake to not proceed with the tool use. proceed
+
+---
+
+## [Aug 8, 8:00 PM IST] follow-up conversation
+tell me how to add the groq api key ?
+and tell me how to do these steps in detail-
+cd server && cp .env.example .env   # add your key
+npm run dev
+node scripts/verify-interviews.mjs   # no MOCK_LLM — hits real Groq
+
 
