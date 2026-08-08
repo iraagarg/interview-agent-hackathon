@@ -92,4 +92,8 @@ cd server && cp .env.example .env   # add your key
 npm run dev
 node scripts/verify-interviews.mjs   # no MOCK_LLM — hits real Groq
 
+---
 
+## [Aug 8, 9:00 PM IST] backend-testing
+test the backend completely
+it should be working 100% successfully and correctly without any errors or flaws

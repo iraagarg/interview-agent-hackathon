@@ -18,10 +18,16 @@ export function createApp() {
 
   app.use(express.json({ limit: '1mb' }));
 
-  // Malformed JSON is thrown by express.json() before any route runs, so it
-  // needs its own handler to come back as our error shape instead of Express's
-  // default HTML error page.
+  // express.json() throws before any route runs, so its failures need their own
+  // handler to come back as our error shape instead of Express's default HTML
+  // error page — or, for an oversized body, an unhandled 500.
   app.use((err, _req, res, next) => {
+    if (err?.type === 'entity.too.large') {
+      return res.status(413).json({
+        error: 'Request body is too large. The limit is 1MB.',
+        code: ErrorCodes.PAYLOAD_TOO_LARGE,
+      });
+    }
     if (err instanceof SyntaxError && 'body' in err) {
       return res.status(400).json({
         error: 'Request body is not valid JSON.',

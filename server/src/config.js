@@ -20,6 +20,10 @@ export const config = {
   // Lets the plan/turn/termination logic be tested deterministically with no
   // API key and no network — and gives a working offline demo fallback.
   mockLlm: process.env.MOCK_LLM === '1',
+
+  // Artificial latency for mocked calls so tests exercise the same event-loop
+  // interleaving as a real awaited network call.
+  mockLatencyMs: Number(process.env.MOCK_LATENCY_MS) || 5,
 };
 
 /**

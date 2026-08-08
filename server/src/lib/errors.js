@@ -18,6 +18,7 @@ export const notFound = (code, message) => new ApiError(404, code, message);
 
 export const ErrorCodes = {
   INVALID_BODY: 'INVALID_BODY',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   MISSING_SESSION_ID: 'MISSING_SESSION_ID',
   MISSING_CANDIDATE: 'MISSING_CANDIDATE',
   INVALID_CANDIDATE: 'INVALID_CANDIDATE',

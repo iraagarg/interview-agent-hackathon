@@ -1,4 +1,4 @@
-import { getDay, getModule } from '../lib/curriculum.js';
+import { getDay, getModule, allDays } from '../lib/curriculum.js';
 
 /**
  * Deterministic interview planner.
@@ -23,6 +23,9 @@ const TIERS = {
   friction:  { score:  40, label: 'passed on the second attempt' },
   clean:     { score:  15, label: 'passed first try' },
   unknown:   { score:  10, label: 'mission outcome not recorded' },
+  // Only ever used to top the plan up to the minimum day count when a candidate
+  // record is too thin to fill it. Never competes with real evidence.
+  unattempted: { score: 0, label: 'has no recorded attempt at this material' },
 };
 
 /**
@@ -60,11 +63,13 @@ export function scoreMission(mission) {
 function toTopic(mission) {
   // Join on day number only. 21 of the 200 missions carry a title that differs
   // from the curriculum's, so the mission title is never used for lookup or
-  // display — the curriculum title is canonical.
-  const day = getDay(mission.day);
+  // display — the curriculum title is canonical. Coerced because a client may
+  // post the day as a string.
+  const dayNumber = Number(mission?.day);
+  const day = getDay(dayNumber);
   if (!day) return null;
 
-  const mod = getModule(mission.day);
+  const mod = getModule(dayNumber);
   const { kind, attempts } = classifyMission(mission);
 
   return {
@@ -93,11 +98,22 @@ function toTopic(mission) {
 export function buildPlan(candidate, { size = PLAN_SIZE } = {}) {
   const missions = Array.isArray(candidate?.missions) ? candidate.missions : [];
 
-  const pool = missions
+  const scored = missions
     .map(toTopic)
     .filter(Boolean)
     // score desc, then day asc — fully deterministic, no ties left to chance.
     .sort((a, b) => b.score - a.score || a.day - b.day);
+
+  // One topic per curriculum day. A client can post two mission entries for the
+  // same day; without this the same day can be selected twice and the plan
+  // reports five topics covering only four distinct days.
+  const pool = [];
+  const seenDays = new Set();
+  for (const topic of scored) {
+    if (seenDays.has(topic.day)) continue; // already sorted, so this keeps the highest score
+    seenDays.add(topic.day);
+    pool.push(topic);
+  }
 
   const selected = [];
   const perModule = new Map();
@@ -120,6 +136,7 @@ export function buildPlan(candidate, { size = PLAN_SIZE } = {}) {
   }
 
   applyStrengthAnchor(selected, pool);
+  topUpFromCurriculum(selected, size, perModule);
 
   const chosen = new Set(selected.map((t) => t.day));
   const reserve = pool.filter((t) => !chosen.has(t.day));
@@ -133,6 +150,51 @@ export function buildPlan(candidate, { size = PLAN_SIZE } = {}) {
     : 'depth';
 
   return { topics: selected, reserve, mode };
+}
+
+/**
+ * Last-resort top-up so the "at least 4 different curriculum days" guarantee
+ * never depends on how much history a candidate record happens to carry.
+ *
+ * The supplied dataset never reaches this — every candidate has at least 9
+ * recorded days — but a client is free to post a candidate with two missions,
+ * and the contract requirement is absolute. Days added here are marked
+ * `unattempted` and score 0, so they are always ranked below real evidence and
+ * the prompt can frame them as new material rather than as a suspected gap.
+ */
+function topUpFromCurriculum(selected, size, perModule) {
+  if (selected.length >= size) return;
+
+  const chosen = new Set(selected.map((t) => t.day));
+
+  const fillers = allDays()
+    .filter((d) => !chosen.has(d.day))
+    .map((d) => {
+      const mod = getModule(d.day);
+      return {
+        day: d.day,
+        title: d.title,
+        type: d.type,
+        tools: d.tools,
+        objectives: d.objectives,
+        moduleN: mod?.n ?? null,
+        moduleTitle: mod?.title ?? 'Unknown Module',
+        signal: { kind: 'unattempted', attempts: null, label: TIERS.unattempted.label },
+        score: TIERS.unattempted.score,
+      };
+    });
+
+  while (selected.length < size && fillers.length > 0) {
+    // Spread across modules the plan does not already cover, so a padded plan
+    // still samples the curriculum rather than three consecutive days.
+    const fresh = fillers.filter((t) => (perModule.get(t.moduleN) || 0) === 0);
+    const pickFrom = fresh.length > 0 ? fresh : fillers;
+    const best = pickFrom.reduce((a, b) => (a.day <= b.day ? a : b));
+
+    selected.push(best);
+    perModule.set(best.moduleN, (perModule.get(best.moduleN) || 0) + 1);
+    fillers.splice(fillers.indexOf(best), 1);
+  }
 }
 
 /**
@@ -165,7 +227,10 @@ function isBetterPick(a, b, perModule) {
 function applyStrengthAnchor(selected, pool) {
   if (selected.some((t) => t.signal.kind === 'clean')) return;
 
-  const anchor = pool.find((t) => t.signal.kind === 'clean' && !selected.includes(t));
+  // Compare by day, not object identity — otherwise a second topic for a day
+  // already in the plan can be swapped in, duplicating that day.
+  const selectedDays = new Set(selected.map((t) => t.day));
+  const anchor = pool.find((t) => t.signal.kind === 'clean' && !selectedDays.has(t.day));
   if (!anchor) return;
 
   // Drop the weakest signal, not the strongest — we trade away the least

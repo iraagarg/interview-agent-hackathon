@@ -12,6 +12,46 @@ import { config } from '../config.js';
  */
 const sessions = new Map();
 
+/**
+ * Per-session serialization.
+ *
+ * A turn reads session state, awaits the LLM, then writes back. Two requests
+ * for one sessionId that overlap across that await both read the same cursor,
+ * both grade against the same topic, and push their transcript entries out of
+ * order — producing a conversation like "answer answer answer question question
+ * question". It is not hypothetical: a double-clicked send button or a
+ * StrictMode double-invoke is enough once real network latency is involved.
+ *
+ * Tasks for the same sessionId are chained so they run one at a time. Different
+ * sessionIds are untouched and still run fully in parallel.
+ */
+const chains = new Map();
+
+export function runExclusive(sessionId, task) {
+  const previous = chains.get(sessionId) ?? Promise.resolve();
+
+  // Run the next task whether the previous one resolved or threw — a failed
+  // request must never wedge the queue for that session.
+  const result = previous.then(task, task);
+
+  const tail = result.then(
+    () => {},
+    () => {}
+  );
+  chains.set(sessionId, tail);
+
+  // Drop the entry once this is the last task in the chain, so the map does not
+  // grow without bound across many sessions.
+  tail.finally(() => {
+    if (chains.get(sessionId) === tail) chains.delete(sessionId);
+  });
+
+  return result;
+}
+
+/** Outstanding lock chains. Should drain to 0 once requests settle. */
+export const lockCount = () => chains.size;
+
 export function has(sessionId) {
   return sessions.has(sessionId);
 }

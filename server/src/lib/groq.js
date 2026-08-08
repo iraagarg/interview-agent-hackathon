@@ -49,6 +49,11 @@ async function call({ system, user, temperature, maxTokens, json }) {
 export async function chatJSON({ system, user, temperature = 0.6, maxTokens = 900, mock }) {
   if (config.mockLlm) {
     if (!mock) throw new Error('MOCK_LLM is on but this call site provided no mock.');
+    // Yield the event loop before returning. A synchronous mock would make every
+    // turn run start-to-finish without interruption, hiding the interleaving
+    // that a real awaited network call permits — so concurrency bugs would be
+    // invisible under MOCK_LLM and only appear in production.
+    await new Promise((resolve) => setTimeout(resolve, config.mockLatencyMs));
     return typeof mock === 'function' ? mock() : mock;
   }
   return call({ system, user, temperature, maxTokens, json: true });
@@ -67,6 +72,11 @@ export async function chatJSON({ system, user, temperature = 0.6, maxTokens = 90
 export async function chatText({ system, user, temperature = 0.4, maxTokens = 900, mock }) {
   if (config.mockLlm) {
     if (!mock) throw new Error('MOCK_LLM is on but this call site provided no mock.');
+    // Yield the event loop before returning. A synchronous mock would make every
+    // turn run start-to-finish without interruption, hiding the interleaving
+    // that a real awaited network call permits — so concurrency bugs would be
+    // invisible under MOCK_LLM and only appear in production.
+    await new Promise((resolve) => setTimeout(resolve, config.mockLatencyMs));
     return typeof mock === 'function' ? mock() : mock;
   }
   return call({ system, user, temperature, maxTokens, json: false });

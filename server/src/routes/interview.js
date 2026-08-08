@@ -25,7 +25,12 @@ function validate(body) {
     );
   }
 
-  if (candidate !== undefined) {
+  // An explicit null is treated as "no candidate", not as a malformed one. A
+  // client that builds every request as { sessionId, candidate: x ?? null,
+  // message } is doing something reasonable, and rejecting its turns over a
+  // null placeholder would be hostile. Genuinely malformed candidates — a
+  // string, an array, one missing member or missions — are still rejected.
+  if (candidate !== undefined && candidate !== null) {
     if (!isPlainObject(candidate)) {
       throw badRequest(ErrorCodes.INVALID_CANDIDATE, 'candidate must be an object.');
     }
@@ -54,38 +59,46 @@ function validate(body) {
   return { kind: 'turn', sessionId: sessionId.trim(), message: message.trim() };
 }
 
-interviewRouter.post('/interview', async (req, res) => {
-  const parsed = validate(req.body);
-
-  if (parsed.kind === 'start') {
-    // Re-posting the candidate for a live session replays rather than resetting,
-    // so a double-submit from the UI cannot wipe an interview in progress.
-    const existing = store.get(parsed.sessionId);
-    if (existing) {
-      const replay = existing.done ? existing.finalPayload : existing.openingPayload;
-      if (replay) return res.status(200).json(replay);
-    }
-
-    const session = store.create(parsed.sessionId, parsed.candidate);
-    const payload = await startInterview(session);
-    session.openingPayload = payload;
-    return res.status(200).json(payload);
+async function startSession({ sessionId, candidate }) {
+  // Re-posting the candidate for a live session replays rather than resetting,
+  // so a double-submit from the UI cannot wipe an interview in progress.
+  const existing = store.get(sessionId);
+  if (existing) {
+    const replay = existing.done ? existing.finalPayload : existing.openingPayload;
+    if (replay) return replay;
   }
 
-  const session = store.get(parsed.sessionId);
+  const session = store.create(sessionId, candidate);
+  const payload = await startInterview(session);
+  session.openingPayload = payload;
+  return payload;
+}
+
+async function continueSession({ sessionId, message }) {
+  const session = store.get(sessionId);
   if (!session) {
     throw notFound(
       ErrorCodes.UNKNOWN_SESSION,
-      `No interview session found for sessionId "${parsed.sessionId}". Start one by posting a candidate object.`
+      `No interview session found for sessionId "${sessionId}". Start one by posting a candidate object.`
     );
   }
 
-  // Completed interviews replay their final payload idempotently (confirmed
-  // decision) rather than erroring on a late or duplicated turn.
-  if (session.done && session.finalPayload) {
-    return res.status(200).json(session.finalPayload);
-  }
+  // Completed interviews replay their final payload idempotently rather than
+  // erroring on a late or duplicated turn.
+  if (session.done && session.finalPayload) return session.finalPayload;
 
-  const payload = await handleTurn(session, parsed.message);
+  return handleTurn(session, message);
+}
+
+interviewRouter.post('/interview', async (req, res) => {
+  const parsed = validate(req.body);
+
+  // Everything that reads session state, awaits the LLM, then writes back runs
+  // under the session's lock. Validation stays outside it so a malformed
+  // request is rejected immediately instead of queueing behind a live turn.
+  const payload = await store.runExclusive(parsed.sessionId, () =>
+    parsed.kind === 'start' ? startSession(parsed) : continueSession(parsed)
+  );
+
   return res.status(200).json(payload);
 });

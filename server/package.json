@@ -10,7 +10,14 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node scripts/test-backend.mjs",
+    "verify": "MOCK_LLM=1 node scripts/verify-interviews.mjs",
+    "verify:advance": "MOCK_LLM=1 MOCK_ACTION=advance node scripts/verify-interviews.mjs",
+    "verify:followup": "MOCK_LLM=1 MOCK_ACTION=followup node scripts/verify-interviews.mjs",
+    "verify:live": "LIMIT=2 node scripts/verify-interviews.mjs",
+    "demo": "MOCK_LLM=1 node scripts/demo-interview.mjs",
+    "demo:live": "node scripts/demo-interview.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
