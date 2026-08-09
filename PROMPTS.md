@@ -190,4 +190,65 @@ here's Vercel URL - https://interview-agent-hackathon.vercel.app/
 ---
 
 ## [Aug 9, 3:40 AM IST] documentation
-yes  *(write the README deploy section, post-deploy checklist, and update PROMPTS.md)*
+yes
+
+*In reply to an offer to write the README deployment section, the post-deploy checklist,
+and to bring this log up to date.*
+
+> Outcome: README filled in — interview strategy with the full scoring table, resilience
+> behaviour, testing guide, Render and Vercel steps, and a post-deploy checklist. Several
+> stale claims in the existing README were corrected rather than left: the smoke test was
+> missing `-X POST`, the error table omitted 413, and the architecture diagram predated
+> `feedback.js` and the session lock. Every npm script named in the README was checked
+> against `package.json`.
+
+---
+
+## [Aug 9, 4:10 AM IST] pre-submission audit
+Before submission, I want to make sure everything is correct and flawless and the whole task is completed 100% without any error and in the best possible way. [...] also, it should get selected for the hackathon.
+
+> Outcome: three issues found. The important one — a remote smoke test written during this
+> pass revealed the LIVE deployment was serving scripted fallback questions, because the
+> Groq quota was exhausted and there was nowhere to fall back to. Fixed permanently with a
+> cross-model chain: Groq rate-limits per model, so `llama-3.1-8b-instant` carries its own
+> daily budget. Also fixed ungrammatical fallback wording built from imperative objectives
+> ("How would you go about containerize the backend"), and renamed a script whose name
+> implied it tested the deployment when it ran locally.
+
+---
+
+## [Aug 9, 4:50 AM IST] second audit pass
+*(same request repeated)*
+
+> Outcome: four more defects, three of them in text a judge would read. The feedback
+> recommended "techniques you learned on Day 28" for API security — Day 28 is Docker,
+> security is Day 27. Fixed with a deterministic guard that validates every `Day N`
+> citation against the days actually covered and drops ungrounded items, rather than
+> trusting a prompt instruction. Also: the feedback leaked "as seen in your cohort record",
+> mixed third and second person, and the client inferred `done` from the presence of
+> feedback instead of the server's `done` flag. Suite reached 211 assertions.
+
+---
+
+## [Aug 9, 5:20 AM IST] Render did not redeploy
+I did these steps as you told me — git add / commit / push — but after that, render did not redeploy, tell me what to do?
+
+> Outcome: the push had landed and the deploy had in fact gone out. The real problem was
+> that this was unknowable from outside: uptime resets when a sleeping free-tier instance
+> wakes, which is indistinguishable from a redeploy. Fixed at the root by having `/health`
+> report `RENDER_GIT_COMMIT`, so deploy verification is now one curl compared against
+> `git rev-parse --short HEAD`.
+
+---
+
+## [Aug 9, 5:40 AM IST] deploy confirmed
+*(pasted terminal output showing `/health` commit `fd3baec` matching local HEAD)*
+
+> Outcome: parity confirmed. Full live verification run — 26/26 checks against the deployed
+> API including a complete interview, plus a browser pass over the deployed frontend.
+> Nothing uncommitted, nothing unpushed.
+
+---
+
+## [Aug 9, 5:50 AM IST] log maintenance
+update the prompts.md — (## [Aug 9, 3:40 AM IST] documentation) either edit this or remove this
