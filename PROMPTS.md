@@ -94,11 +94,100 @@ node scripts/verify-interviews.mjs   # no MOCK_LLM — hits real Groq
 
 ---
 
+## [Aug 8, 8:20 PM IST] clarifying how to run the verification scripts
+I successfully did till step 2 you told me above
+but I couldn't understand from step 3 onwards
+explain in detail
+give me the best answer
+
+> Outcome: Claude noticed the API key was already in `server/.env` and ran the scripts
+> directly instead of only explaining them. Also corrected its own earlier instruction —
+> the verification scripts boot their own server, so `npm run dev` in a second terminal is
+> not needed. First real-Groq interview confirmed working here.
+
+---
+
 ## [Aug 8, 9:00 PM IST] backend-testing
 test the backend completely
 it should be working 100% successfully and correctly without any errors or flaws
 
 ---
 
-## [Aug 8, 9:30 PM IST] Frontend
+## [Aug 8, 9:40 PM IST] backend-testing, second pass
+test the backend completely
+it should be working 100% successfully and correctly without any errors or flaws
+also test the backend locally
+
+> Outcome: found a same-session concurrency bug that the first pass had missed. Mocked LLM
+> calls were returning synchronously, so turns never yielded the event loop and the race
+> was invisible under MOCK_LLM. Fixed the harness first, reproduced the corruption
+> (`transcript order: iccccciiiii`, every answer graded against topic 0), then fixed it with
+> a per-session lock. Suite grew to 203 assertions.
+
+---
+
+## [Aug 8, 10:30 PM IST] Frontend
 Backend is confirmed working. Now build the /client React chat UI: message input, scrolling message history, call the backend at an env-configurable API URL (not hardcoded localhost), show a clean feedback summary card when done: true is received. Keep it simple and polished over feature-rich — this is what "polish" gets judged on.
+
+> Outcome: built and then driven in a real browser with Playwright. Two polish bugs found
+> by looking at screenshots rather than logs — an error banner too dark to read, and failed
+> answers being wiped from the composer instead of preserved for retry.
+
+---
+
+## [Aug 9, 12:10 AM IST] running both services locally
+how to run the backend and frontend locally (so that I can test it)?
+give me all the exact steps to do so.
+
+---
+
+## [Aug 9, 12:40 AM IST] repository layout
+what is the root directory?
+
+> Outcome: surfaced the deployment trap — `data/` sits above both `server/` and `client/`,
+> which matters for Vercel's root-directory setting.
+
+---
+
+## [Aug 9, 1:15 AM IST] deploy the backend
+give me all the exact steps clearly to Deploy backend (Render) so that I can successfully deploy the backend.
+
+---
+
+## [Aug 9, 2:00 AM IST] Render returned 404 on the base URL
+I did all the steps you told me above till step 5 (including step 5)
+Render showed that deployment was successful and gave me this link -
+https://interview-agent-api-nipj.onrender.com/
+but on opening this link, I can see this -
+{ "error": "No route for GET /.", "code": "NOT_FOUND" }
+help me resolve the issue
+
+> Outcome: not a bug — the API only defines `POST /api/interview` and `GET /health`, and a
+> browser sends `GET /`. Claude verified the live deployment was fully working, then added a
+> `GET /` index route so the base URL describes the service instead of erroring.
+
+---
+
+## [Aug 9, 2:40 AM IST] deploy the frontend
+give me all the exact steps clearly to Deploy frontend (Vercel) so that I can successfully deploy the frontend.
+give me the exact steps clearly what to do (make sure deployment of frontend is 100% successful and flawless)
+
+> Outcome: before writing instructions, removed the deployment risk — the client no longer
+> imports from `../../data`. A sync script keeps a committed copy fresh locally and leaves it
+> alone when `/data` is unreachable. Verified by deleting `/data` and rebuilding.
+
+---
+
+## [Aug 9, 3:20 AM IST] frontend is live
+frontend is successfully deployed -
+here's Vercel URL - https://interview-agent-hackathon.vercel.app/
+
+> Outcome: full interview driven through the live Vercel + Render stack — 9 questions,
+> 8 distinct curriculum days, feedback card rendered, no console errors. The feedback came
+> back as the deterministic fallback rather than LLM-authored; diagnosed as Groq's daily
+> token quota being exhausted by testing, not a code fault.
+
+---
+
+## [Aug 9, 3:40 AM IST] documentation
+yes  *(write the README deploy section, post-deploy checklist, and update PROMPTS.md)*
