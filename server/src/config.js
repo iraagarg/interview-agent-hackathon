@@ -8,6 +8,13 @@ export const config = {
   port: Number(process.env.PORT) || 8080,
   groqApiKey: process.env.GROQ_API_KEY || '',
   groqModel: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+
+  // Groq applies rate limits per model, so a second model carries its own
+  // daily token budget. When the primary is exhausted the interview keeps
+  // generating real questions on this one instead of dropping to the scripted
+  // fallback. Set to an empty string to disable.
+  groqFallbackModel:
+    process.env.GROQ_FALLBACK_MODEL ?? 'llama-3.1-8b-instant',
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173')
     .split(',')
     .map((o) => o.trim())

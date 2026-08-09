@@ -406,6 +406,23 @@ section('10. Mission classification');
     scoreMission({ passed: true, attempts: 99 }) < scoreMission({ passed: false, attempts: 1 }));
 }
 
+section('10b. Groq model fallback chain');
+
+{
+  const { modelChain } = await import('../src/lib/groq.js');
+  const { config } = await import('../src/config.js');
+
+  const chain = modelChain();
+  check('chain starts with the configured primary model', chain[0] === config.groqModel, chain.join(' -> '));
+  check('chain includes a distinct fallback model',
+    chain.length === 2 && chain[1] === config.groqFallbackModel && chain[1] !== chain[0],
+    chain.join(' -> '));
+
+  // Groq rate-limits per model, so the fallback only helps if it is a
+  // different model with its own daily budget.
+  check('fallback is not the same model as the primary', new Set(chain).size === chain.length);
+}
+
 section('11. Feedback parsing and normalisation');
 
 {

@@ -131,9 +131,8 @@ export async function startInterview(session) {
   if (!reply) {
     const name = firstName(session.candidate);
     reply =
-      `Hi ${name}, thanks for making time — let's get started. ` +
-      `To begin: ${topic.objectives[0]?.replace(/^./, (c) => c.toLowerCase())} — ` +
-      `walk me through how you'd approach that.`;
+      `Hi ${name}, thanks for making time. Let's start with ${topic.title} — ` +
+      `walk me through what you've done there.`;
   }
 
   session.questionCount = 1;
@@ -201,10 +200,13 @@ export async function handleTurn(session, message) {
   let reply = cleanReply(out?.reply);
 
   if (!reply) {
-    reply =
-      action === 'next_topic'
-        ? `Understood — let's move on. ${askedTopic.objectives[0]} — how would you handle that?`
-        : `Can you go a level deeper on that? Walk me through the specifics.`;
+    // Safety net for a failed generation. Built from the curriculum TITLE, not
+    // an objective: objectives are written as imperatives ("Containerize the
+    // backend"), which read as broken grammar inside a question. Titles are
+    // noun phrases and compose cleanly for all 31 days.
+    reply = action === 'next_topic'
+      ? `Let's switch topics — ${askedTopic.title}. Walk me through what you've done there.`
+      : `Take that a level deeper for me — what does that look like in practice?`;
   }
 
   session.questionCount += 1;

@@ -15,7 +15,8 @@
     "verify": "MOCK_LLM=1 node scripts/verify-interviews.mjs",
     "verify:advance": "MOCK_LLM=1 MOCK_ACTION=advance node scripts/verify-interviews.mjs",
     "verify:followup": "MOCK_LLM=1 MOCK_ACTION=followup node scripts/verify-interviews.mjs",
-    "verify:live": "LIMIT=2 node scripts/verify-interviews.mjs",
+    "verify:groq": "LIMIT=2 node scripts/verify-interviews.mjs",
+    "smoke": "node scripts/smoke-remote.mjs",
     "demo": "MOCK_LLM=1 node scripts/demo-interview.mjs",
     "demo:live": "node scripts/demo-interview.mjs"
   },

@@ -187,11 +187,16 @@ malform, and the parse is a regex.
 
 ## Resilience
 
-Every LLM call is wrapped. If Groq errors, rate-limits, or returns something unparseable:
+Every LLM call is wrapped, and degradation happens in stages:
 
-- questions fall back to prompts built from the day's curriculum objectives
-- feedback falls back to a deterministic composer built from the assessment ledger
-- the interview still completes with a valid contract-shaped response
+1. **Retry** the same model once — covers a transient error or a malformed body.
+2. **Switch models.** Groq rate-limits per model, so `llama-3.1-8b-instant` carries its own
+   daily budget. When the primary is exhausted the interview keeps generating real,
+   context-aware questions rather than scripted ones.
+3. **Scripted fallback.** If every model fails, questions are built from the curriculum day
+   and feedback from a deterministic composer over the assessment ledger.
+
+At every stage the interview still completes with a valid contract-shaped response.
 
 This was verified against a real outage, not a simulation. Groq's free-tier daily token
 limit was exhausted several times during development, and every affected run still
@@ -303,6 +308,10 @@ npm run verify:followup # every answer invites a deeper probe
 
 npm run demo -- CAND-010       # read a full interview, canned responses
 npm run demo:live -- CAND-010  # read a full interview, real Groq (~11 calls)
+
+# against a DEPLOYED backend, over the network
+npm run smoke -- https://interview-agent-api-nipj.onrender.com
+npm run smoke -- https://interview-agent-api-nipj.onrender.com --full
 ```
 
 `npm test` covers the API contract, request validation, malformed and hostile input,
@@ -328,6 +337,7 @@ concurrency bugs are invisible under `MOCK_LLM` and only appear in production.
 |----------|----------|-------|
 | `GROQ_API_KEY` | yes | From console.groq.com |
 | `GROQ_MODEL` | no | Defaults to `llama-3.3-70b-versatile` |
+| `GROQ_FALLBACK_MODEL` | no | Defaults to `llama-3.1-8b-instant`. Used when the primary model's quota is exhausted — Groq rate-limits per model, so this carries a separate budget |
 | `PORT` | no | Injected by Render; defaults to 8080. Do not set it on Render |
 | `CORS_ORIGINS` | no | Comma-separated origins, or `*`. Defaults to `http://localhost:5173` |
 | `MOCK_LLM` | no | `1` runs against canned responses. Never set this in production |
@@ -388,29 +398,17 @@ committed copy alone instead of failing the build.
 
 ### Post-deploy checklist
 
-Verify behaviour, not just that the build succeeded.
+Verify behaviour, not just that the build succeeded. One command covers the API:
 
 ```bash
-API=https://interview-agent-api-nipj.onrender.com
-
-# 1 · service is up
-curl -s $API/health                          # -> {"ok":true,...}
-
-# 2 · base URL is presentable
-curl -s $API/                                # -> service description, not a 404
-
-# 3 · interview starts (run from the repository root)
-curl -s -X POST $API/api/interview -H 'Content-Type: application/json' \
-  -d "{\"sessionId\":\"check\",\"candidate\":$(node -p 'JSON.stringify(require("./data/candidates.json").candidates[9])')}"
-
-# 4 · state survives across requests — the reply must reference your answer
-curl -s -X POST $API/api/interview -H 'Content-Type: application/json' \
-  -d '{"sessionId":"check","message":"Embeddings map text into a dense vector space."}'
-
-# 5 · errors are shaped correctly
-curl -s -X POST $API/api/interview -H 'Content-Type: application/json' \
-  -d '{"sessionId":"nope","message":"hi"}'   # -> 404 UNKNOWN_SESSION
+cd server
+npm run smoke -- https://interview-agent-api-nipj.onrender.com
 ```
+
+It checks reachability, the error shapes, the contract shape on start and turn, that
+replies are real model output rather than mock text, and that conversation state survives
+across separate requests. Add `--full` to drive a complete interview and assert the
+8-question and 4-day minimums plus the feedback shape.
 
 Then, in the browser:
 
