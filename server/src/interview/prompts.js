@@ -225,6 +225,8 @@ export function feedbackPrompt(session) {
 technical interview about an AI engineering cohort they completed.
 
 Write TO the candidate, in second person ("You explained...", "You could not...").
+This applies to EVERY line including the summary — never write their name, never
+write "the candidate", never use third person anywhere.
 Be direct and specific. This is useful precisely because it is honest — do not
 inflate, but do not be cruel either. No hedging, no corporate filler.
 
@@ -249,7 +251,12 @@ RULES:
   evidence below, and state a concrete action — build, rebuild, implement,
   measure. Never "study more" or "review the material".
 - No line repeats another. Never use a newline inside a line.
-- Do not mention scores, ratings, or that their cohort record was available to you.`;
+- Only cite day numbers that appear in the evidence below, and cite each one with
+  the exact title it is paired with there. Never guess a day number.
+- Base every claim on what they said in the interview. Never refer to their
+  "cohort record", "mission record", "progress" or "attempts" — from their point
+  of view you only heard their answers.
+- Do not mention scores or ratings.`;
 
   const user = `CANDIDATE
 ${candidateBrief(session.candidate)}

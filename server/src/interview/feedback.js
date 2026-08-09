@@ -89,6 +89,28 @@ export function parseFeedbackLines(text) {
  * omits a field, that piece falls back to ledger-derived text. The contract
  * shape is guaranteed no matter what the model does.
  */
+/**
+ * Drop any item citing a curriculum day the interview did not actually cover.
+ *
+ * Models mis-map day numbers — one run recommended revisiting "Day 28" for API
+ * security when security is Day 27 and Day 28 is Docker. Wrong study advice is
+ * worse than generic advice, and a prompt instruction cannot guarantee this the
+ * way a check can. Anything dropped is refilled from the deterministic composer
+ * by normalizeFeedback.
+ */
+function dropUngroundedDayReferences(items, validDays) {
+  if (!Array.isArray(items)) return items;
+
+  return items.filter((item) => {
+    const referenced = [...String(item).matchAll(/\bDay\s+(\d+)/gi)].map((m) => Number(m[1]));
+    const grounded = referenced.every((day) => validDays.has(day));
+    if (!grounded) {
+      console.warn(`[feedback] dropped item citing an uncovered day: ${String(item).slice(0, 80)}`);
+    }
+    return grounded;
+  });
+}
+
 export async function generateFeedback(session) {
   const fallback = composeFeedback(session);
 
@@ -101,7 +123,15 @@ export async function generateFeedback(session) {
       maxTokens: 900,
       mock: () => mockFeedback(session),
     });
-    return normalizeFeedback(parseFeedbackLines(raw), fallback);
+
+    const parsed = parseFeedbackLines(raw);
+    const validDays = new Set((session.ledger || []).map((e) => e.day));
+
+    for (const key of ['strengths', 'gaps', 'next']) {
+      parsed[key] = dropUngroundedDayReferences(parsed[key], validDays);
+    }
+
+    return normalizeFeedback(parsed, fallback);
   } catch (err) {
     console.warn(`[feedback] synthesis failed, using deterministic composer: ${err.message}`);
     return fallback;

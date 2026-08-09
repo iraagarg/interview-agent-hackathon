@@ -472,6 +472,42 @@ section('11. Feedback parsing and normalisation');
   }
 }
 
+section('11b. Ungrounded day citations are dropped');
+
+{
+  const { generateFeedback } = await import('../src/interview/feedback.js');
+
+  // The mock returns NEXT lines citing only days present in the ledger, so a
+  // clean ledger should keep them and a mismatched one should drop them.
+  const base = {
+    questionCount: 9,
+    candidate: candidates[0],
+    topics: buildPlan(candidates[0]).topics,
+    ledger: [
+      { day: 7, title: 'Embeddings Explained', signal: 'clean', score: 2, covered: ['vectors'], missed: [] },
+      { day: 27, title: 'Security', signal: 'skipped', score: 0, covered: [], missed: ['authz'] },
+    ],
+  };
+
+  const kept = await generateFeedback(base);
+  check('items citing covered days survive',
+    kept.next.some((s) => /Day (7|27)\b/.test(s)) || kept.next.length >= 2,
+    kept.next.join(' | '));
+
+  // Same ledger days, but the mock will cite 7 and 27 while the session claims
+  // the interview only covered day 99 — every citation is now ungrounded.
+  const mismatched = { ...base, ledger: [{ ...base.ledger[0], day: 99, title: 'Nonexistent' }] };
+  const filtered = await generateFeedback(mismatched);
+  check('items citing an uncovered day are dropped',
+    !filtered.next.some((s) => /Day (7|27)\b/.test(s)),
+    filtered.next.join(' | '));
+  check('dropped items are refilled so the contract still holds',
+    filtered.next.length >= 2 && filtered.next.every((s) => typeof s === 'string' && s.trim()));
+  check('feedback shape survives filtering',
+    typeof filtered.summary === 'string' &&
+      ['strengths', 'gaps', 'next'].every((k) => Array.isArray(filtered[k]) && filtered[k].length >= 2));
+}
+
 section('12. Deterministic composer coherence');
 
 {

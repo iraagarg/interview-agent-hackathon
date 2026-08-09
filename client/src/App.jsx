@@ -14,6 +14,11 @@ export default function App() {
   const [candidate, setCandidate] = useState(null);
   const [messages, setMessages] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  // Tracked from the server's `done` flag rather than inferred from the
+  // presence of feedback. Those are two different facts, and conflating them
+  // means a response with done:true but no feedback object would leave the UI
+  // believing the interview is still running.
+  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,7 +29,6 @@ export default function App() {
   const inFlightRef = useRef(false);
 
   const questionCount = messages.filter((m) => m.role === 'interviewer').length;
-  const done = feedback !== null;
 
   const start = useCallback(async (chosen) => {
     if (inFlightRef.current) return;
@@ -34,6 +38,7 @@ export default function App() {
     setCandidate(chosen);
     setMessages([]);
     setFeedback(null);
+    setDone(false);
     setError(null);
     setLoading(true);
 
@@ -67,7 +72,10 @@ export default function App() {
         message: text,
       });
       setMessages((prev) => [...prev, { role: 'interviewer', content: data.reply }]);
-      if (data.done) setFeedback(data.feedback);
+      if (data.done) {
+        setDone(true);
+        setFeedback(data.feedback ?? null);
+      }
       return true;
     } catch (err) {
       // Roll the optimistic message back out of the transcript so the UI does
@@ -86,6 +94,7 @@ export default function App() {
     setCandidate(null);
     setMessages([]);
     setFeedback(null);
+    setDone(false);
     setError(null);
   }, []);
 

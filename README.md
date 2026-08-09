@@ -21,6 +21,19 @@ Built for the ABTalks Vibe Code Hackathon · solo submission.
 
 ---
 
+## Screenshots
+
+| Pick a candidate | The interview |
+|---|---|
+| ![Candidate list](docs/screenshot-candidates.png) | ![Interview in progress](docs/screenshot-interview.png) |
+
+Questions target the days the candidate actually struggled with, and follow-ups quote the
+answer they just gave.
+
+![Feedback](docs/screenshot-feedback.png)
+
+---
+
 ## What it does
 
 The agent reads a candidate's mission history and interviews them on the material they
