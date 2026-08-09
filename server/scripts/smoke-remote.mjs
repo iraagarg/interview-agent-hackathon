@@ -63,6 +63,10 @@ const health = await fetch(`${base}/health`, { signal: AbortSignal.timeout(120_0
   .then(async (r) => ({ status: r.status, json: await r.json() }))
   .catch((e) => ({ status: 0, error: e.message }));
 check('GET /health returns ok:true', health.status === 200 && health.json?.ok === true, health.error);
+if (health.json?.commit) {
+  console.log(`        running commit ${health.json.commit} on ${health.json.branch}`);
+  console.log(`        model ${health.json.model}, fallback ${health.json.fallbackModel ?? 'none'}`);
+}
 
 const root = await fetch(`${base}/`, { signal: AbortSignal.timeout(60_000) })
   .then(async (r) => ({ status: r.status, json: await r.json() }))

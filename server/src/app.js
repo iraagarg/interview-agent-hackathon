@@ -64,7 +64,15 @@ export function createApp() {
   });
 
   app.get('/health', (_req, res) => {
-    res.status(200).json({ ok: true, sessions: store.size(), uptime: process.uptime() });
+    res.status(200).json({
+      ok: true,
+      commit: config.commit,
+      branch: config.branch,
+      model: config.groqModel,
+      fallbackModel: config.groqFallbackModel || null,
+      sessions: store.size(),
+      uptime: process.uptime(),
+    });
   });
 
   app.use('/api', interviewRouter);

@@ -23,6 +23,13 @@ export const config = {
   // Session lifetime before the sweeper reclaims it.
   sessionTtlMs: 2 * 60 * 60 * 1000,
 
+  // Which build is running. Render injects RENDER_GIT_COMMIT automatically, so
+  // "did my deploy actually land?" is answerable with one curl instead of
+  // guessing from uptime — uptime resets when a sleeping free-tier instance
+  // wakes, which looks identical to a redeploy.
+  commit: (process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'local').slice(0, 7),
+  branch: process.env.RENDER_GIT_BRANCH || 'local',
+
   // MOCK_LLM=1 runs the whole interview against canned structured responses.
   // Lets the plan/turn/termination logic be tested deterministically with no
   // API key and no network — and gives a working offline demo fallback.

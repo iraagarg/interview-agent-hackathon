@@ -411,7 +411,21 @@ committed copy alone instead of failing the build.
 
 ### Post-deploy checklist
 
-Verify behaviour, not just that the build succeeded. One command covers the API:
+**First, confirm the deploy actually landed.** `/health` reports the running commit —
+uptime is not a reliable signal, because it also resets when a sleeping free-tier instance
+wakes up, which looks identical to a redeploy.
+
+```bash
+curl -s https://interview-agent-api-nipj.onrender.com/health
+# {"ok":true,"commit":"d68d0ed","branch":"main","model":"llama-3.3-70b-versatile",...}
+
+git rev-parse --short HEAD    # must match "commit" above
+```
+
+If they differ, the deploy has not gone out: Render dashboard → **Manual Deploy** →
+**Deploy latest commit**.
+
+Then verify behaviour, not just that the build succeeded. One command covers the API:
 
 ```bash
 cd server
